@@ -1,0 +1,40 @@
+---
+title: "Dathathon: COVID"
+output: COVID_dataset
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(janitor)
+library(scales)
+library(plotly)
+
+# Getting COVID Data
+setwd('/Users/carolinewills/Desktop/COVID Datathon')
+covid_data <- read.csv('covid_filtered.csv')
+
+# Filter data for hospital characteristics and confirmed covid-19 hospitalizations
+covid_filtered_df <- covid_data %>% select(hospital_subtype, is_metro_micro, city, total_adult_patients_hospitalized_confirmed_covid_7_day_sum, total_pediatric_patients_hospitalized_confirmed_covid_7_day_sum) %>% mutate(total_patients_hospitalized_confirmed_covid_7_day_sum = total_pediatric_patients_hospitalized_confirmed_covid_7_day_sum + total_adult_patients_hospitalized_confirmed_covid_7_day_sum)
+
+# Group data by city of hospital and sum of COVID hospitalizations for adult and pediatric patients
+covid_filtered_df_city <- covid_filtered_df %>% group_by(city) %>% summarise(total_patients_covid_hospitalized_sum=sum(total_patients_hospitalized_confirmed_covid_7_day_sum), total_adult_patients_covid_hospitalized_sum=sum(total_adult_patients_hospitalized_confirmed_covid_7_day_sum),total_pediatric_patients_covid_hospitalized_sum=sum(total_pediatric_patients_hospitalized_confirmed_covid_7_day_sum))
+
+# Filter COVID hospitalizations by Seattle, New York, Chicago, Los Angeles, and Atlanta
+covid_filtered_df_select_cities <- covid_filtered_df_city %>% filter(city %in% c('SEATTLE', 'NEW YORK', 'LOS ANGELES', 'CHICAGO', 'ATLANTA'))
+
+# Bar Chart for COVID Hospitalizations based on Select Cities
+covid_hospitalization_select_cities <- ggplot(covid_filtered_df_select_cities, aes(x = city, y = total_patients_covid_hospitalized_sum, fill = city)) + geom_bar(stat = "identity") +
+  labs(title = "COVID Hospitalizations in Select Cities from 1/2021 to 9/2022", x = "City", y = "Total COVID Hospitalizations") +
+  theme_minimal() + scale_y_continuous(limits = c(0, max(covid_filtered_df_select_cities$total_patients_covid_hospitalized_sum) * 1.2)) +   scale_fill_manual(values=c("#7E747C", "#ABB27f", "#A96969", "#709CA4", "#6F936E"))
+
+ggplotly(covid_hospitalization_select_cities)
+```
+
+
+
